@@ -7,7 +7,7 @@ class CuiNet(nn.Module):
         super(CuiNet, self).__init__()
         
         # Layers dimensions
-        self.conv1d_dims = input_dims
+        self.conv1d_dims = input_dims-4         # size of spectrum - (kernel_size-1) is the size of the spectrum after first conv1D
         self.k_number = 1
         self.k_width = 5
         self.k_stride = 1
