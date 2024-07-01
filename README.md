@@ -18,7 +18,7 @@ train_DeepSectra
 CuiNet is derived from:
 Modern practical convolutional neural networks for multivariate regression: Applications to NIR calibration
 Chenhao Cui, Tom Fearn
-DOI: 10.1016/j.chemolab.2018.07.008
+DOI: 10.1016/j.chemolab.2018.07.008 
 2018
 
 
