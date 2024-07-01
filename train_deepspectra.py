@@ -19,6 +19,8 @@ LR=0.0001
 
 data_path="C:\\00_aioly\\sources_projects\\OSSL_project\\data\\datasets\\ossl\\ossl_all_L1_v1.2.csv"
 spectral_data = SoilSpectralDataSet(data_path=data_path,dataset_type="mir")
+spec_dims=spectral_data.spec_dims-1
+
 
 train_size = int(0.9 * len(spectral_data))
 val_size = len(spectral_data) - train_size
@@ -28,8 +30,8 @@ train_dataset, val_dataset = random_split(spectral_data, [train_size, val_size])
 train_loader = DataLoader(train_dataset, batch_size=BATCH, shuffle=True,num_workers=0)
 val_loader = DataLoader(val_dataset, batch_size=BATCH, shuffle=False,num_workers=0)
 
-mean = np.zeros(1700) 
-std = np.zeros(1700)
+mean = np.zeros(spec_dims) 
+std = np.zeros(spec_dims)
 
 for inputs, targets in train_loader:
     mean += np.sum(np.array(inputs),axis = 0)
@@ -43,7 +45,7 @@ for inputs, targets in train_loader:
 std /= len(train_loader.dataset)
 std = std 
 
-model = DeepSpectraCNN(1700, mean = mean,std = std)
+model = DeepSpectraCNN(spec_dims, mean = mean,std = std)
 optimizer = optim.Adam(model.parameters(), lr=LR, weight_decay=0.003/2)
 criterion = nn.MSELoss()
 criterion_test = nn.MSELoss()
