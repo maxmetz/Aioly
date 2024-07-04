@@ -26,7 +26,7 @@ LR=0.0001
 data_path="C:\\00_aioly\\sources_projects\\OSSL_project\\data\\datasets\\ossl\\ossl_all_L1_v1.2.csv"
 spectral_data = SoilSpectralDataSet(data_path=data_path,dataset_type="mir")
 spec_dims=spectral_data.spec_dims
-
+y_labels=["oc_usda.c729_w.pct","na.ext_usda.a726_cmolc.kg"] 
 
 train_size = int(0.9 * len(spectral_data))
 val_size = len(spectral_data) - train_size
@@ -43,24 +43,34 @@ val_loader = DataLoader(val_dataset, batch_size=BATCH, shuffle=False,num_workers
 mean = np.zeros(spec_dims) 
 std = np.zeros(spec_dims)
 
+mean_y=np.zeros(len(y_labels))
+std_y=np.zeros(len(y_labels))
+
 for inputs, targets in train_loader:
     mean += np.sum(np.array(inputs),axis = 0)
+    mean_y += np.sum(np.array(targets),axis = 0)
+    
+          
 mean /= len(train_loader.dataset)
+mean_y /= len(train_loader.dataset)
+
 
 
 for inputs, targets in train_loader:
+    
     std += np.sum((np.array(inputs)-mean)**2,axis = 0)
+    std_y += np.sum((np.array(targets)-mean_y)**2,axis = 0)
     
 std /= len(train_loader.dataset)
-std = std 
+std_y /= len(train_loader.dataset)
 ###############################################################################
 
 # Load Model and set training 
 
 ###############################################################################
-model = DeepSpectraCNN(spec_dims, mean = mean,std = std)
+model = DeepSpectraCNN(spec_dims, mean = mean,std = std,out_dims=len(y_labels))
 optimizer = optim.Adam(model.parameters(), lr=LR, weight_decay=0.003/2)
-criterion = nn.MSELoss(reduction='none')
+criterion = nn.MSELoss()
 criterion_test = nn.MSELoss()
 
 print(model)
