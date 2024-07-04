@@ -3,7 +3,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 class CuiNet(nn.Module):
-    def __init__(self, input_dims, mean,std):
+    def __init__(self, input_dims, mean,std,out_dims=1):
         super(CuiNet, self).__init__()
         
         # Layers dimensions
@@ -14,7 +14,7 @@ class CuiNet(nn.Module):
         self.fc1_dims = 36
         self.fc2_dims = 18
         self.fc3_dims = 12
-        self.out_dims = 1
+        self.out_dims = out_dims
         self.mean = nn.Parameter(torch.tensor(mean).float(),requires_grad=False)
         self.std = nn.Parameter(torch.tensor(std).float(),requires_grad=False)
         
@@ -57,28 +57,6 @@ class CuiNet(nn.Module):
         return x
 
 
-# class InceptionModule(nn.Module):
-    # def __init__(self, in_channels, out_channels):
-    #     super(InceptionModule, self).__init__()
-        
-        
-      
-    #     self.conv1x1 = nn.Conv1d(in_channels, out_channels, kernel_size=1)
-    #     self.conv3x1 = nn.Conv1d(in_channels, out_channels, kernel_size=3, padding=1)
-    #     self.conv5x1 = nn.Conv1d(in_channels, out_channels, kernel_size=5, padding=2)
-    #     # self.pool = nn.MaxPool1d(kernel_size=3, stride=1, padding=1)
-    #     self.pool =nn.AvgPool1d(kernel_size=3, stride=1, padding=1)
-    #     self.conv_pool = nn.Conv1d(in_channels, out_channels, kernel_size=1)
-       
-    # def forward(self, x):
-
-    #     out1x1 = F.relu(self.conv1x1(x))             
-    #     out3x1 = F.relu(self.conv3x1(x))       
-    #     out5x1 = F.relu(self.conv5x1(x))
-    #     out_pool = self.pool(x)
-
-    #     out = torch.cat([out1x1, out3x1, out5x1, out_pool], dim=1)
-    #     return out
     
     
 class ConvBlock1D(nn.Module):
@@ -130,12 +108,13 @@ class InceptionModule(nn.Module):
     
     
 class DeepSpectraCNN(nn.Module):
-    def __init__(self, input_dim,mean,std,dropout=0.5):
+    def __init__(self, input_dim,mean,std,dropout=0.5,out_dims=1):
         super(DeepSpectraCNN, self).__init__()
         self.conv1d_dims = input_dim
         self.dropout=dropout
         self.mean = nn.Parameter(torch.tensor(mean).float(),requires_grad=False)
         self.std = nn.Parameter(torch.tensor(std).float(),requires_grad=False)
+        self.out_dims=out_dims
         
         
         kernel_size = 7
@@ -156,7 +135,7 @@ class DeepSpectraCNN(nn.Module):
         
         
         self.fc1 = nn.Linear(16*flat_dim,64)
-        self.fc2 = nn.Linear(64, 1)
+        self.fc2 = nn.Linear(64, self.out_dims)
         
         
 
