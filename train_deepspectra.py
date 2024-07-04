@@ -1,4 +1,6 @@
 ##### TRAIN MODEL WITH ADAM OPTIMIZER #########
+
+###############################################################################
 import torch
 import numpy as np
 import pandas as pd
@@ -9,7 +11,11 @@ from net.base_net import DeepSpectraCNN
 from torch.utils.data import Dataset , DataLoader, random_split
 from data.load_dataset import SoilSpectralDataSet
 from torcheval import metrics
+###############################################################################
 
+# Load and split Data, define training parameters
+
+###############################################################################
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
 
@@ -19,7 +25,7 @@ LR=0.0001
 
 data_path="C:\\00_aioly\\sources_projects\\OSSL_project\\data\\datasets\\ossl\\ossl_all_L1_v1.2.csv"
 spectral_data = SoilSpectralDataSet(data_path=data_path,dataset_type="mir")
-spec_dims=spectral_data.spec_dims-1
+spec_dims=spectral_data.spec_dims
 
 
 train_size = int(0.9 * len(spectral_data))
@@ -29,7 +35,11 @@ train_dataset, val_dataset = random_split(spectral_data, [train_size, val_size])
 # Create DataLoader for training and validation
 train_loader = DataLoader(train_dataset, batch_size=BATCH, shuffle=True,num_workers=0)
 val_loader = DataLoader(val_dataset, batch_size=BATCH, shuffle=False,num_workers=0)
+###############################################################################
 
+# compute mean and std of dataset , Standardize the data
+
+###############################################################################
 mean = np.zeros(spec_dims) 
 std = np.zeros(spec_dims)
 
@@ -39,22 +49,28 @@ mean /= len(train_loader.dataset)
 
 
 for inputs, targets in train_loader:
-    
     std += np.sum((np.array(inputs)-mean)**2,axis = 0)
     
 std /= len(train_loader.dataset)
 std = std 
+###############################################################################
 
+# Load Model and set training 
+
+###############################################################################
 model = DeepSpectraCNN(spec_dims, mean = mean,std = std)
 optimizer = optim.Adam(model.parameters(), lr=LR, weight_decay=0.003/2)
-criterion = nn.MSELoss()
+criterion = nn.MSELoss(reduction='none')
 criterion_test = nn.MSELoss()
 
 print(model)
 model = model.to(device)
 
+###############################################################################
+
 # Training loop
 
+###############################################################################
 
 
 for epoch in range(num_epochs):
