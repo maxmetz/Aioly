@@ -7,7 +7,7 @@ import pandas as pd
 from torch import nn
 from torch import optim
 import matplotlib.pyplot as plt
-from net.base_net import DeepSpectraCNN
+from net.base_net import FullyConvNet
 from torch.utils.data import Dataset , DataLoader, random_split
 from data.load_dataset import SoilSpectralDataSet
 from torcheval import metrics
@@ -29,13 +29,14 @@ y_labels=["oc.usda.c729"]
 spectral_data = SoilSpectralDataSet(data_path=data_path,dataset_type="mir",y_labels= y_labels)
 spec_dims=spectral_data.spec_dims
 
+
 train_size = int(0.9 * len(spectral_data))
 val_size = len(spectral_data) - train_size
 train_dataset, val_dataset = random_split(spectral_data, [train_size, val_size])
 
 # Create DataLoader for training and validation
-train_loader = DataLoader(train_dataset, batch_size=BATCH, shuffle=True,num_workers=20)
-val_loader = DataLoader(val_dataset, batch_size=BATCH, shuffle=False,num_workers=20)
+train_loader = DataLoader(train_dataset, batch_size=BATCH, shuffle=True,num_workers=20,prefetch_factor= 4)
+val_loader = DataLoader(val_dataset, batch_size=BATCH, shuffle=False,num_workers=20, prefetch_factor= 4)
 ###############################################################################
 
 # compute mean and std of dataset , Standardize the data
@@ -69,7 +70,7 @@ std_y /= len(train_loader.dataset)
 # Load Model and set training 
 
 ###############################################################################
-model = DeepSpectraCNN(spec_dims, mean = mean,std = std,out_dims=len(y_labels))
+model = FullyConvNet(spec_dims, mean = mean,std = std,out_dims=len(y_labels))
 optimizer = optim.Adam(model.parameters(), lr=LR, weight_decay=0.003/2)
 criterion = nn.MSELoss()
 criterion_test = nn.MSELoss()

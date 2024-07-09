@@ -6,7 +6,6 @@ import pandas as pd
 import matplotlib.pyplot as plt
 
 
-
 class SoilSpectralDataSet(Dataset):
     def __init__(self, dataset_type="visnir", data_path=None, preprocessing=None,y_labels="oc.usda.c729"):
         if data_path==None:
