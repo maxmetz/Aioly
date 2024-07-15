@@ -21,7 +21,7 @@ device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
 num_epochs = 1000
 BATCH=1024
-LR=0.001
+LR=0.0001
 
 data_path="/home/metz/deepchemometrics/Aioly/data/dataset/oss/ossl_all_L1_v1.2.csv"
 y_labels=["oc.usda.c729"]

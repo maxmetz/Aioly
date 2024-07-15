@@ -293,7 +293,7 @@ class FullyConvNet(nn.Module):
         self.conv1d_4 = nn.Conv1d(4, 8, kernel_size=5, stride=1)
         self.avg_4 = nn.AvgPool1d(2)
         self.conv1d_5 = nn.Conv1d(8, 12, kernel_size=3, stride=1)
-        self.dp = nn.Dropout(0.8)
+        self.dp = nn.Dropout(0.5)
         self.head = nn.Conv1d(12, out_dims, kernel_size=1, stride=1)
 
     def forward(self, x):
