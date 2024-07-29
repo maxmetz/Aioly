@@ -9,9 +9,8 @@ A dataset class for OSSL data adapted for torch dataloader.
 base_net:
 define two networks CuiNet and DeepSpectraCNN
 
-example of training:
-train_CuiNet
-train_DeepSectra
+utils:
+training functions
 
 
 
