@@ -75,4 +75,4 @@ if __name__ == "__main__":
     print(model)
    
     
-    train(model, optimizer, criterion, train_loader, val_loader, num_epochs, save_path=save_path, save_interval=save_interval)
+    train_losses, val_losses,val_r2_scores=train(model, optimizer, criterion, train_loader, val_loader, num_epochs, save_path=save_path, save_interval=save_interval)

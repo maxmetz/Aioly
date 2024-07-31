@@ -70,8 +70,8 @@ if __name__ == "__main__":
 
     model = ResNet18_1D(num_classes=len(y_labels),head='mlp',mean=mean,std=std)  #input_dims=spec_dims, mean=mean,std = std, out_channels=len(y_labels)
     optimizer = optim.Adam(model.parameters(), lr=LR, weight_decay=0.003/2)
-    criterion = nn.MSELoss()
-    criterion_test = nn.MSELoss()
+    criterion = nn.MSELoss(reduce=False)
+    criterion_test = nn.MSELoss(reduce=False)
     print(model)
    
     
