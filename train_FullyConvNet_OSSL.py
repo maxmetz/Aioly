@@ -71,9 +71,9 @@ if __name__ == "__main__":
 
     model = FullyConvNet(spec_dims, mean = mean,std = std,out_dims=len(y_labels))
     optimizer = optim.Adam(model.parameters(), lr=LR, weight_decay=0.003/2)
-    criterion = nn.MSELoss(reduce=False)
-    criterion_test = nn.MSELoss(reduce=False)
+    criterion = nn.MSELoss(reduce='none')
+    criterion_test = nn.MSELoss(reduce='none')
     print(model)
    
     
-    train(model, optimizer, criterion, train_loader, val_loader, num_epochs, save_path=save_path, save_interval=save_interval)
+    train_losses, val_losses,val_r2_scores=train(model, optimizer, criterion, train_loader, val_loader, num_epochs, save_path=save_path, save_interval=save_interval)

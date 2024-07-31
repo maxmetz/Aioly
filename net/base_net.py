@@ -4,7 +4,7 @@ import torch.nn.functional as F
 
 
 class CuiNet(nn.Module):
-    def __init__(self, input_dims, mean,std,out_dims=1):
+    def __init__(self, input_dims, mean,std,dropout=0.2,out_dims=1):
         super(CuiNet, self).__init__()
         
         # Layers dimensions
@@ -16,6 +16,7 @@ class CuiNet(nn.Module):
         self.fc2_dims = 18
         self.fc3_dims = 12
         self.out_dims = out_dims
+        self.dropout=dropout
         self.mean = nn.Parameter(torch.tensor(mean).float(),requires_grad=False)
         self.std = nn.Parameter(torch.tensor(std).float(),requires_grad=False)
         
@@ -51,7 +52,7 @@ class CuiNet(nn.Module):
         x = F.elu(self.fc1(x))
         x = F.elu(self.fc2(x))
         x = F.elu(self.fc3(x))
-        
+        x = F.dropout(x, p=self.dropout, training=self.training)
         # Output layer with linear activation
         x = self.out(x)
         
@@ -274,12 +275,12 @@ class ResNet1D(nn.Module):
     
     
 class FullyConvNet(nn.Module):
-    def __init__(self, input_dims, mean, std, out_dims=1):
+    def __init__(self, input_dims, mean, std,dropout=0.5, out_dims=1):
         super(FullyConvNet, self).__init__()
 
         # Layers dimensions
         self.input_dims = input_dims
-     
+        self.dropout=dropout
         self.out_dims = out_dims
         self.mean = nn.Parameter(torch.tensor(mean).float(), requires_grad=False)
         self.std = nn.Parameter(torch.tensor(std).float(), requires_grad=False)
@@ -294,7 +295,7 @@ class FullyConvNet(nn.Module):
         self.conv1d_4 = nn.Conv1d(4, 8, kernel_size=5, stride=1)
         self.avg_4 = nn.AvgPool1d(2)
         self.conv1d_5 = nn.Conv1d(8, 12, kernel_size=3, stride=1)
-        self.dp = nn.Dropout(0.8)
+        self.dp = nn.Dropout(self.dropout)
         self.head = nn.Conv1d(12, out_dims, kernel_size=1, stride=1)
 
     def forward(self, x):

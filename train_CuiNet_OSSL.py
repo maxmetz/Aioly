@@ -29,7 +29,7 @@ if __name__ == "__main__":
 ###############################################################################
     
 ############################# DEFINE TRAINING PARAMS ##########################
-    num_epochs = 1000
+    num_epochs = 2
     BATCH = 1024
     LR = 0.0001
     save_interval = 50  # Save model every 10 epochs
@@ -70,9 +70,11 @@ if __name__ == "__main__":
 
     model = CuiNet(spec_dims, mean = mean,std = std, out_dims=len(y_labels)) 
     optimizer = optim.Adam(model.parameters(), lr=LR, weight_decay=0.003/2)
-    criterion = nn.MSELoss()
-    criterion_test = nn.MSELoss()
+    criterion = nn.MSELoss(reduction='none')
+    criterion_test = nn.MSELoss(reduction='none')
     print(model)
    
     
     train_losses, val_losses,val_r2_scores=train(model, optimizer, criterion, train_loader, val_loader, num_epochs, save_path=save_path, save_interval=save_interval)
+    
+    
