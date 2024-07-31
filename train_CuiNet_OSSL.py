@@ -4,8 +4,7 @@ import os
 import torch
 from torch import nn
 from torch import optim
-from torch.utils.data import Dataset , DataLoader, random_split
-from torcheval import metrics
+from torch.utils.data import DataLoader, random_split
 from net.base_net import CuiNet
 from data.load_dataset import SoilSpectralDataSet
 from utils.training import train
