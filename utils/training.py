@@ -39,16 +39,26 @@ def train(model, optimizer, criterion, train_loader, val_loader, num_epochs, sav
                 val_loss += loss.item() * inputs.size(0)
         
         val_loss /= len(val_loader.dataset)
+        if epoch == 0 : 
+            ref_val = val_loss
         
         print(f'Epoch {epoch+1}/{num_epochs}, Loss: {epoch_loss:.4f}, Val Loss: {val_loss:.4f}')
       
-        if save_path and (epoch + 1) % save_interval == 0:
+        if save_path and (epoch + 1) % save_interval == 0 and val_loss < ref_val :
+            ref_val = val_loss
             epoch_save_path = save_path + f'_epoch_{epoch + 1}.pth'
             torch.save(model.state_dict(), epoch_save_path)
             print(f'Model saved at epoch {epoch + 1} to {epoch_save_path}')
 
     if save_path:
-        final_save_path = save_path + '_final.pth'
-        torch.save(model.state_dict(), final_save_path)
-        print(f"Final model saved at {final_save_path}")
+        if val_loss < ref_val : 
+            final_save_path = save_path + '_best.pth'
+            torch.save(model.state_dict(), final_save_path)
+            print(f"Final model saved at {final_save_path}")
+            
+        else : 
+            final_save_path = save_path + '_best.pth'
+            torch.save(torch.load(epoch_save_path), final_save_path)
+            print(f"Final model saved at {final_save_path}")
+            
 ###############################################################################       
