@@ -2,8 +2,9 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
+
 class CuiNet(nn.Module):
-    def __init__(self, input_dims, mean,std,out_dims=1):
+    def __init__(self, input_dims, mean,std,dropout=0.2,out_dims=1):
         super(CuiNet, self).__init__()
         
         # Layers dimensions
@@ -15,6 +16,7 @@ class CuiNet(nn.Module):
         self.fc2_dims = 18
         self.fc3_dims = 12
         self.out_dims = out_dims
+        self.dropout=dropout
         self.mean = nn.Parameter(torch.tensor(mean).float(),requires_grad=False)
         self.std = nn.Parameter(torch.tensor(std).float(),requires_grad=False)
         
@@ -50,14 +52,14 @@ class CuiNet(nn.Module):
         x = F.elu(self.fc1(x))
         x = F.elu(self.fc2(x))
         x = F.elu(self.fc3(x))
-        
+        x = F.dropout(x, p=self.dropout, training=self.training)
         # Output layer with linear activation
         x = self.out(x)
         
         return x
 
 
-    
+###############################################################################   
     
 class ConvBlock1D(nn.Module):
     
@@ -104,7 +106,8 @@ class InceptionModule(nn.Module):
         out = torch.cat([out1, out2, out3, out4], dim=1)
         return out
    
-
+ 
+    
 class DeepSpectraCNN(nn.Module):
     def __init__(self, input_dim,mean,std,dropout=0.5,out_dims=1):
         super(DeepSpectraCNN, self).__init__()
@@ -113,19 +116,25 @@ class DeepSpectraCNN(nn.Module):
         self.mean = nn.Parameter(torch.tensor(mean).float(),requires_grad=False)
         self.std = nn.Parameter(torch.tensor(std).float(),requires_grad=False)
         self.out_dims=out_dims
+               
         kernel_size = 7
         stride = 3
         padding = 3
+               
         # Convolutional layers
         self.conv1 = nn.Conv1d(1, 8, kernel_size=kernel_size, stride=stride, padding=padding)
+        
         # Inception modules
         self.inception2 = InceptionModule(8, 4)
         self.inception3 = InceptionModule(16,4)
+        
         # Other layers
         self.flatten = nn.Flatten()
         flat_dim=((input_dim + 2 * padding - kernel_size) // stride + 1)
+             
         self.fc1 = nn.Linear(16*flat_dim,64)
         self.fc2 = nn.Linear(64, self.out_dims)
+               
 
     def forward(self, x):
         x = (x-self.mean)/self.std
@@ -138,15 +147,140 @@ class DeepSpectraCNN(nn.Module):
         x = self.fc2(x)
         
         return x
+    
+# ###############################################################################
 
 
+class ResidualBlock1D(nn.Module):
+    expansion = 1
+
+    def __init__(self, in_channels, out_channels, stride=1):
+        super(ResidualBlock1D, self).__init__()
+        self.conv1 = nn.Conv1d(in_channels, out_channels, kernel_size=3, stride=stride, padding=1, bias=False)
+        self.bn1 = nn.BatchNorm1d(out_channels)
+        self.conv2 = nn.Conv1d(out_channels, out_channels, kernel_size=3, stride=1, padding=1, bias=False)
+        self.bn2 = nn.BatchNorm1d(out_channels)
+
+        self.shortcut = nn.Sequential()
+        if stride != 1 or in_channels != self.expansion * out_channels:
+            self.shortcut = nn.Sequential(
+                nn.Conv1d(in_channels, self.expansion * out_channels, kernel_size=1, stride=stride, bias=False),
+                nn.BatchNorm1d(self.expansion * out_channels)
+            )
+
+    def forward(self, x):
+        out = F.relu(self.bn1(self.conv1(x)))
+        out = self.bn2(self.conv2(out))
+        out += self.shortcut(x)
+        out = F.relu(out)
+        return out
+
+
+
+class Bottleneck1D(nn.Module):
+    expansion = 4
+
+    def __init__(self, in_channels, out_channels, stride=1):
+        super(Bottleneck1D, self).__init__()
+        self.conv1 = nn.Conv1d(in_channels, out_channels, kernel_size=1, bias=False)
+        self.bn1 = nn.BatchNorm1d(out_channels)
+        self.conv2 = nn.Conv1d(out_channels, out_channels, kernel_size=3, stride=stride, padding=1, bias=False)
+        self.bn2 = nn.BatchNorm1d(out_channels)
+        self.conv3 = nn.Conv1d(out_channels, self.expansion * out_channels, kernel_size=1, bias=False)
+        self.bn3 = nn.BatchNorm1d(self.expansion * out_channels)
+
+        self.shortcut = nn.Sequential()
+        if stride != 1 or in_channels != self.expansion * out_channels:
+            self.shortcut = nn.Sequential(
+                nn.Conv1d(in_channels, self.expansion * out_channels, kernel_size=1, stride=stride, bias=False),
+                nn.BatchNorm1d(self.expansion * out_channels)
+            )
+
+    def forward(self, x):
+        out = F.relu(self.bn1(self.conv1(x)))
+        out = F.relu(self.bn2(self.conv2(out)))
+        out = self.bn3(self.conv3(out))
+        out += self.shortcut(x)
+        out = F.relu(out)
+        return out
+
+def ResNet18_1D(**kwargs):
+    return ResNet1D(ResidualBlock1D, [2, 2, 2, 2], **kwargs)
+
+def ResNet34_1D(**kwargs):
+    return ResNet1D(ResidualBlock1D, [3, 4, 6, 3], **kwargs)
+
+def ResNet50_1D(**kwargs):
+    return ResNet1D(Bottleneck1D, [3, 4, 6, 3], **kwargs)
+
+def ResNet101_1D(**kwargs):
+    return ResNet1D(Bottleneck1D, [3, 4, 23, 3], **kwargs)
+
+class ResNet1D(nn.Module):
+    def __init__(self, block, num_blocks, in_channel=1, num_classes=1, zero_init_residual=False, head='linear',mean=0.0, std=1.0,dropout=0.5,inplanes=8):
+        super(ResNet1D, self).__init__()
+        self.in_planes = inplanes
+        self.dropout=dropout
+        self.mean = nn.Parameter(torch.tensor(mean).float(), requires_grad=False)
+        self.std = nn.Parameter(torch.tensor(std).float(), requires_grad=False)
+        self.conv1 = nn.Sequential(
+            nn.Conv1d(in_channel, self.in_planes, kernel_size=7, stride=2, padding=3, bias=False),
+            nn.BatchNorm1d(self.in_planes),
+            nn.ReLU(inplace=True)
+        )
+        self.layer1 = self._make_layer(block, inplanes, num_blocks[0], stride=1)
+        self.layer2 = self._make_layer(block, 2*inplanes, num_blocks[1], stride=2)
+        self.layer3 = self._make_layer(block, 4*inplanes, num_blocks[2], stride=2)
+        self.layer4 = self._make_layer(block, 8*inplanes, num_blocks[3], stride=2)
+        self.avgpool = nn.AdaptiveAvgPool1d(1)
+
+
+        if zero_init_residual:
+            for m in self.modules():
+                if isinstance(m, Bottleneck1D):
+                    nn.init.constant_(m.bn3.weight, 0)
+                elif isinstance(m, ResidualBlock1D):
+                    nn.init.constant_(m.bn2.weight, 0)
+
+        if head == 'linear':
+            self.head = nn.Linear(8*inplanes * block.expansion, num_classes)
+        elif head == 'mlp':
+            dim_in = 8*inplanes * block.expansion
+            self.head = nn.Sequential(
+                nn.Linear(dim_in, dim_in),
+                nn.ReLU(inplace=True),
+                nn.Linear(dim_in, num_classes)
+            )
+
+    def _make_layer(self, block, out_channels, num_blocks, stride):
+        strides = [stride] + [1] * (num_blocks - 1)
+        layers = []
+        for stride in strides:
+            layers.append(block(self.in_planes, out_channels, stride))
+            self.in_planes = out_channels * block.expansion
+        return nn.Sequential(*layers)
+
+    def forward(self, x):
+        x = (x - self.mean) / self.std
+        out = self.conv1(x)
+        out = self.layer1(out)
+        out = self.layer2(out)
+        out = self.layer3(out)
+        out = self.layer4(out)
+        out = self.avgpool(out)
+        out = torch.flatten(out, 1)
+        out = F.dropout(out, p=self.dropout, training=self.training)
+        out = self.head(out)
+        return out
+    
+    
 class FullyConvNet(nn.Module):
-    def __init__(self, input_dims, mean, std, out_dims=1):
+    def __init__(self, input_dims, mean, std,dropout=0.5, out_dims=1):
         super(FullyConvNet, self).__init__()
 
         # Layers dimensions
         self.input_dims = input_dims
-     
+        self.dropout=dropout
         self.out_dims = out_dims
         self.mean = nn.Parameter(torch.tensor(mean).float(), requires_grad=False)
         self.std = nn.Parameter(torch.tensor(std).float(), requires_grad=False)
@@ -161,7 +295,7 @@ class FullyConvNet(nn.Module):
         self.conv1d_4 = nn.Conv1d(4, 8, kernel_size=5, stride=1)
         self.avg_4 = nn.AvgPool1d(2)
         self.conv1d_5 = nn.Conv1d(8, 12, kernel_size=3, stride=1)
-        self.dp = nn.Dropout(0.8)
+        self.dp = nn.Dropout(self.dropout)
         self.head = nn.Conv1d(12, out_dims, kernel_size=1, stride=1)
 
     def forward(self, x):
