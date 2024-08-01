@@ -8,6 +8,7 @@ from torch.utils.data import DataLoader, random_split
 from net.base_net import DeepSpectraCNN
 from data.load_dataset import SoilSpectralDataSet
 from utils.training import train
+from utils.testing import test
 ###############################################################################
 
 
