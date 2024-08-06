@@ -7,12 +7,13 @@ import matplotlib.pyplot as plt
 
 
 class SoilSpectralDataSet(Dataset):
-    def __init__(self, dataset_type="visnir", data_path=None, preprocessing=None,y_labels="oc.usda.c729"):
+    def __init__(self, dataset_type="visnir", data_path=None, preprocessing=None,y_labels="oc.usda.c729", reduce_lbd = False):
         if data_path==None:
             # Set default data path in project path if none provided
             rel_dir = os.path.dirname(os.path.abspath(__file__))
             data_path = os.path.join(rel_dir, 'data/datasets/oss/ossl_all_L1_v1.2.csv')
             
+        self.reduce_lbd = reduce_lbd
         self.data_path = data_path
         self.oss_data_path = data_path
         self.preprocessing =preprocessing
@@ -44,6 +45,8 @@ class SoilSpectralDataSet(Dataset):
            raise ValueError("dataset_type must be either 'mir' or 'nir'")
        
         self.spec_dims=self.X.shape[1]
+        if self.reduce_lbd : 
+            self.spec_dims -= 1
         
         # Apply preprocessing if provided
         if self.preprocessing:
@@ -63,6 +66,8 @@ class SoilSpectralDataSet(Dataset):
 
     def __getitem__(self, index):
         spectral_data = self.X[index, :]
+        if self.reduce_lbd : 
+            spectral_data = spectral_data[:-1]
         label = self.Y[index]
         return spectral_data, np.log(label+1)
     
