@@ -86,30 +86,54 @@ def train(model, optimizer, criterion, train_loader, val_loader, num_epochs, sav
                 inputs = inputs.to(device,non_blocking=True).float()
                 targets = targets.to(device,non_blocking=True).float()
                 outputs = model(inputs[:,None])
+                           
                 loss = criterion(outputs, targets) 
-                val_loss += loss.item() * inputs.size(0)
+                val_loss += loss.mean(dim=0) * inputs.size(0)
+                
+                out.append(outputs.detach().cpu())
+                tar.append(targets.detach().cpu())
+
+
+        val_loss = val_loss / len(val_loader.dataset)
+        val_losses.append(val_loss)    
         
-        val_loss /= len(val_loader.dataset)
-        if epoch == 0 : 
-            ref_val = val_loss
+        all_outputs = torch.cat(out, dim=0)
+        all_targets = torch.cat(tar, dim=0)
         
-        print(f'Epoch {epoch+1}/{num_epochs}, Loss: {epoch_loss:.4f}, Val Loss: {val_loss:.4f}')
+        r2_scores = []
+        
+        for i in range(model.out_dims):
+            R2[i].update(all_targets[:, i], all_outputs[:, i])
+            r2_score = R2[i].compute().item()
+            r2_scores.append(r2_score)
+        
+        val_r2_scores.append(r2_scores)
+        
+        val_loss = val_loss / len(val_loader.dataset)
+        val_losses.append(val_loss)
+        
+        train_loss_str = ', '.join([f'y {i}: {loss:.4f}' for i, loss in enumerate(epoch_loss)])
+        val_loss_str = ', '.join([f'y {i}: {loss:.4f}' for i, loss in enumerate(val_loss)])
+        r2_score_str = ', '.join([f'y {i}: {score:.4f}' for i, score in enumerate(r2_scores)])
+        
+        print(f'Epoch {epoch+1}/{num_epochs} | Train Losses: {train_loss_str} | Validation Losses: {val_loss_str} | R2 Scores: {r2_score_str}')
+
+        if early_stop:
+            early_stopping(val_loss.mean(), model, epoch + 1)
+            if early_stopping.early_stop:
+                break
+
       
-        if save_path and (epoch + 1) % save_interval == 0 and val_loss < ref_val :
-            ref_val = val_loss
+        if save_path and (epoch + 1) % save_interval == 0:
             epoch_save_path = save_path + f'_epoch_{epoch + 1}.pth'
             torch.save(model.state_dict(), epoch_save_path)
             print(f'Model saved at epoch {epoch + 1} to {epoch_save_path}')
 
     if save_path:
-        if val_loss < ref_val : 
-            final_save_path = save_path + '_best.pth'
-            torch.save(model.state_dict(), final_save_path)
-            print(f"Final model saved at {final_save_path}")
-            
-        else : 
-            final_save_path = save_path + '_best.pth'
-            torch.save(torch.load(epoch_save_path), final_save_path)
-            print(f"Final model saved at {final_save_path}")
+        final_save_path = save_path + f'_epoch_{num_epochs}_final.pth'
+        torch.save(model.state_dict(), final_save_path)
+        print(f"Final model saved at {final_save_path}")
+
+    return train_losses, val_losses,val_r2_scores
             
 ###############################################################################       
