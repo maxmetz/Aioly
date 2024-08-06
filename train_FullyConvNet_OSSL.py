@@ -8,6 +8,7 @@ from torch.utils.data import DataLoader, random_split
 from net.base_net import FullyConvNet
 from data.load_dataset import SoilSpectralDataSet
 from utils.training import train
+from utils.testing import test
 ###############################################################################
 
 
@@ -37,7 +38,11 @@ if __name__ == "__main__":
 
 ############################# LOAD DATA ##########################    
     name_model ="_FullyConvNet_OSSL_"  
-    data_path="C:\\00_aioly\\sources_projects\\OSSL_project\\data\\datasets\\ossl\\ossl_all_L1_v1.2.csv"
+    user= os.environ.get('USERNAME')
+    if user =='fabdelghafo':
+        data_path ="C:\\00_aioly\\sources_projects\\OSSL_project\\data\\datasets\\ossl\\ossl_all_L1_v1.2.csv"
+    else:
+         data_path="/home/metz/deepchemometrics/Aioly/data/dataset/oss/ossl_all_L1_v1.2.csv"
     save_path = os.path.dirname(data_path) + f'\\models\\{name_model}\\'+ name_model
     
     y_labels = ["oc_usda.c729_w.pct", "na.ext_usda.a726_cmolc.kg"]
@@ -77,3 +82,6 @@ if __name__ == "__main__":
    
     
     train_losses, val_losses,val_r2_scores=train(model, optimizer, criterion, train_loader, val_loader, num_epochs, save_path=save_path, save_interval=save_interval)
+    best_model_path = os.path.dirname(data_path) + f'\\models\\{name_model}\\'+ name_model + '_best.pth'
+    
+    test(model,best_model_path,val_loader)
