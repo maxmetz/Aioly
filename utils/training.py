@@ -2,6 +2,7 @@ import torch
 import torcheval.metrics
 import numpy as np
 import os
+import matplotlib.pyplot as plt
 
 class EarlyStopping:
     def __init__(self, patience=10, delta_factor=0.00025, save_path=None):
@@ -73,7 +74,7 @@ def train(model, optimizer, criterion, train_loader, val_loader, num_epochs, sav
             running_loss += loss.mean(dim=0) * inputs.size(0)
             
         epoch_loss = running_loss / len(train_loader.dataset)
-        train_losses.append(epoch_loss)       
+        train_losses.append(epoch_loss.detach().cpu())       
            
         # Validation loop
         model.eval()
@@ -95,7 +96,7 @@ def train(model, optimizer, criterion, train_loader, val_loader, num_epochs, sav
 
 
         val_loss = val_loss / len(val_loader.dataset)
-        val_losses.append(val_loss)    
+        val_losses.append(val_loss.detach().cpu())    
         
         all_outputs = torch.cat(out, dim=0)
         all_targets = torch.cat(tar, dim=0)
@@ -109,8 +110,6 @@ def train(model, optimizer, criterion, train_loader, val_loader, num_epochs, sav
         
         val_r2_scores.append(r2_scores)
         
-        val_loss = val_loss / len(val_loader.dataset)
-        val_losses.append(val_loss)
         
         train_loss_str = ', '.join([f'y {i}: {loss:.4f}' for i, loss in enumerate(epoch_loss)])
         val_loss_str = ', '.join([f'y {i}: {loss:.4f}' for i, loss in enumerate(val_loss)])
@@ -133,6 +132,44 @@ def train(model, optimizer, criterion, train_loader, val_loader, num_epochs, sav
         final_save_path = save_path + f'_epoch_{num_epochs}_final.pth'
         torch.save(model.state_dict(), final_save_path)
         print(f"Final model saved at {final_save_path}")
+        
+        
+    train_losses_np = [loss.numpy() for loss in train_losses]
+    val_losses_np = [loss.numpy() for loss in val_losses]
+
+
+    # Create figure and axes
+    fig, ax1 = plt.subplots(figsize=(12, 6))
+
+    # Plotting Training and Validation Losses
+    ax1.set_xlabel('Epoch')
+    ax1.set_ylabel('Loss', color='tab:blue')
+    ax1.plot(train_losses_np, label='Training Loss', color='tab:blue')
+    ax1.plot(val_losses_np, label='Validation Loss', color='tab:orange')
+    ax1.tick_params(axis='y', labelcolor='tab:blue')
+    ax1.legend(loc='upper left')
+
+    # Create another y-axis for R2 Scores
+    ax2 = ax1.twinx()
+    ax2.set_ylabel('R2 Score', color='tab:green')
+
+    # Assuming val_r2_scores is a list of lists (one list per epoch)
+    for i in range(len(val_r2_scores[0])):  # Loop over each target dimension
+        r2_scores = [scores[i] for scores in val_r2_scores]
+        ax2.plot(r2_scores, label=f'R2 Score y{i}', linestyle='--')
+
+    ax2.tick_params(axis='y', labelcolor='tab:green')
+    ax2.legend(loc='upper right')
+
+    # Set title and layout
+    plt.title('Training and Validation Metrics per Epoch')
+    fig.tight_layout()  # To prevent overlapping
+
+    # Show the plot
+    plt.show()    
+        
+        
+        
 
     return train_losses, val_losses,val_r2_scores
             

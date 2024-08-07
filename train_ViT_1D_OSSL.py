@@ -39,7 +39,7 @@ if __name__ == "__main__":
 ###############################################################################
     
 ############################# DEFINE TRAINING PARAMS ##########################
-    num_epochs = 1000
+    num_epochs = 10
     BATCH = 1024
     LR = 0.0001
     save_interval = 50  # Save model every 10 epochs
@@ -98,7 +98,7 @@ if __name__ == "__main__":
     
     
     if user=='fabdelghafo':
-        best_model_path='C:\00_aioly\sources_projects\OSSL_project\data\datasets\ossl\models\_ViT_1D_OSSL_\_ViT_1D_OSSL__epoch_3_final.pth'
+        best_model_path='C:\\00_aioly\\sources_projects\OSSL_project\data\datasets\ossl\models\_ViT_1D_OSSL_\_ViT_1D_OSSL__epoch_3_final.pth'
     else:
         best_model_path = os.path.dirname(data_path) + f'\\models\\{name_model}\\'+ name_model + '_best.pth'
     
