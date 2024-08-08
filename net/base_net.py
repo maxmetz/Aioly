@@ -220,7 +220,7 @@ def ResNet101_1D(**kwargs):
     return ResNet1D(Bottleneck1D, [3, 4, 23, 3], **kwargs)
 
 class ResNet1D(nn.Module):
-    def __init__(self, block, num_blocks, in_channel=1, num_classes=1, zero_init_residual=False, head='linear',mean=0.0, std=1.0,dropout=0.5,inplanes=8):
+    def __init__(self, block, num_blocks, in_channel=1, out_dims=1, zero_init_residual=False, head='linear',mean=0.0, std=1.0,dropout=0.5,inplanes=8):
         super(ResNet1D, self).__init__()
         self.in_planes = inplanes
         self.dropout=dropout
@@ -246,13 +246,13 @@ class ResNet1D(nn.Module):
                     nn.init.constant_(m.bn2.weight, 0)
 
         if head == 'linear':
-            self.head = nn.Linear(8*inplanes * block.expansion, num_classes)
+            self.head = nn.Linear(8*inplanes * block.expansion, out_dims)
         elif head == 'mlp':
             dim_in = 8*inplanes * block.expansion
             self.head = nn.Sequential(
                 nn.Linear(dim_in, dim_in),
                 nn.ReLU(inplace=True),
-                nn.Linear(dim_in, num_classes)
+                nn.Linear(dim_in, out_dims)
             )
 
     def _make_layer(self, block, out_channels, num_blocks, stride):
@@ -392,7 +392,7 @@ class ViT_1D(nn.Module):
         super().__init__()
         
         assert (seq_len % patch_size) == 0
-        
+        self.out_dims=out_dims
         self.mean = nn.Parameter(torch.tensor(mean).float(), requires_grad=False)
         self.std = nn.Parameter(torch.tensor(std).float(), requires_grad=False)
 
@@ -414,7 +414,7 @@ class ViT_1D(nn.Module):
 
         self.mlp_head = nn.Sequential(
             nn.LayerNorm(dim_embed),
-            nn.Linear(dim_embed, out_dims)
+            nn.Linear(dim_embed,  self.out_dims)
         )
 
     def forward(self, x):
