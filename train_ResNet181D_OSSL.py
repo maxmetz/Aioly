@@ -8,6 +8,7 @@ from torch.utils.data import DataLoader, random_split
 from net.base_net import ResNet18_1D
 from data.load_dataset import SoilSpectralDataSet
 from utils.training import train
+from utils.testing import test
 ###############################################################################
 
 
@@ -35,9 +36,14 @@ if __name__ == "__main__":
     save_interval = 50  # Save model every 10 epochs
     
     name_model ="_ResNET18_OSSL_"  
-    data_path="C:\\00_aioly\\sources_projects\\OSSL_project\\data\\datasets\\ossl\\ossl_all_L1_v1.2.csv"
-    save_path = os.path.dirname(data_path) + f'\\models\\{name_model}\\'+ name_model
     
+    user= os.environ.get('USERNAME')
+    if user =='fabdelghafo':
+        data_path ="C:\\00_aioly\\sources_projects\\OSSL_project\\data\\datasets\\ossl\\ossl_all_L1_v1.2.csv"
+    else:
+         data_path="/home/metz/deepchemometrics/Aioly/data/dataset/oss/ossl_all_L1_v1.2.csv"
+    save_path = os.path.dirname(data_path) + f'\\models\\{name_model}\\'+ name_model
+   
     y_labels = ["oc_usda.c729_w.pct", "na.ext_usda.a726_cmolc.kg"]
  
     # Load dataset and create DataLoader with seed
@@ -70,9 +76,15 @@ if __name__ == "__main__":
 
     model = ResNet18_1D(num_classes=len(y_labels),head='mlp',mean=mean,std=std)  #input_dims=spec_dims, mean=mean,std = std, out_channels=len(y_labels)
     optimizer = optim.Adam(model.parameters(), lr=LR, weight_decay=0.003/2)
-    criterion = nn.MSELoss()
-    criterion_test = nn.MSELoss()
+    criterion = nn.MSELoss(reduce='none')
+    criterion_test = nn.MSELoss(reduce='none')
     print(model)
    
     
-    train(model, optimizer, criterion, train_loader, val_loader, num_epochs, save_path=save_path, save_interval=save_interval)
+    train_losses, val_losses,val_r2_scores= train(model, optimizer, criterion, train_loader, val_loader, num_epochs, save_path=save_path, save_interval=save_interval)
+    if user=='fabdelghafo':
+        best_model_path="C:\\00_aioly\\sources_projects\\OSSL_project\\data\\datasets\\ossl\\models\\_ViT_1D_OSSL_\\_ViT_1D_OSSL__epoch_3_final.pth"
+    else:
+        best_model_path = os.path.dirname(data_path) + f'\\models\\{name_model}\\'+ name_model + '_best.pth'
+    
+    test(model,best_model_path,val_loader)

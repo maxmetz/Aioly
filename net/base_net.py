@@ -7,7 +7,7 @@ from einops import rearrange, repeat, pack, unpack
 from einops.layers.torch import Rearrange
 
 class CuiNet(nn.Module):
-    def __init__(self, input_dims, mean,std,out_dims=1):
+    def __init__(self, input_dims, mean,std,dropout=0.2,out_dims=1):
         super(CuiNet, self).__init__()
         
         # Layers dimensions
@@ -19,6 +19,7 @@ class CuiNet(nn.Module):
         self.fc2_dims = 18
         self.fc3_dims = 12
         self.out_dims = out_dims
+        self.dropout=dropout
         self.mean = nn.Parameter(torch.tensor(mean).float(),requires_grad=False)
         self.std = nn.Parameter(torch.tensor(std).float(),requires_grad=False)
         
@@ -54,7 +55,7 @@ class CuiNet(nn.Module):
         x = F.elu(self.fc1(x))
         x = F.elu(self.fc2(x))
         x = F.elu(self.fc3(x))
-        
+        x = F.dropout(x, p=self.dropout, training=self.training)
         # Output layer with linear activation
         x = self.out(x)
         
@@ -219,7 +220,7 @@ def ResNet101_1D(**kwargs):
     return ResNet1D(Bottleneck1D, [3, 4, 23, 3], **kwargs)
 
 class ResNet1D(nn.Module):
-    def __init__(self, block, num_blocks, in_channel=1, num_classes=1, zero_init_residual=False, head='linear',mean=0.0, std=1.0,dropout=0.5,inplanes=8):
+    def __init__(self, block, num_blocks, in_channel=1, out_dims=1, zero_init_residual=False, head='linear',mean=0.0, std=1.0,dropout=0.5,inplanes=8):
         super(ResNet1D, self).__init__()
         self.in_planes = inplanes
         self.dropout=dropout
@@ -245,13 +246,13 @@ class ResNet1D(nn.Module):
                     nn.init.constant_(m.bn2.weight, 0)
 
         if head == 'linear':
-            self.head = nn.Linear(8*inplanes * block.expansion, num_classes)
+            self.head = nn.Linear(8*inplanes * block.expansion, out_dims)
         elif head == 'mlp':
             dim_in = 8*inplanes * block.expansion
             self.head = nn.Sequential(
                 nn.Linear(dim_in, dim_in),
                 nn.ReLU(inplace=True),
-                nn.Linear(dim_in, num_classes)
+                nn.Linear(dim_in, out_dims)
             )
 
     def _make_layer(self, block, out_channels, num_blocks, stride):
@@ -277,12 +278,12 @@ class ResNet1D(nn.Module):
     
     
 class FullyConvNet(nn.Module):
-    def __init__(self, input_dims, mean, std, out_dims=1):
+    def __init__(self, input_dims, mean, std,dropout=0.5, out_dims=1):
         super(FullyConvNet, self).__init__()
 
         # Layers dimensions
         self.input_dims = input_dims
-     
+        self.dropout=dropout
         self.out_dims = out_dims
         self.mean = nn.Parameter(torch.tensor(mean).float(), requires_grad=False)
         self.std = nn.Parameter(torch.tensor(std).float(), requires_grad=False)
@@ -297,7 +298,7 @@ class FullyConvNet(nn.Module):
         self.conv1d_4 = nn.Conv1d(4, 8, kernel_size=5, stride=1)
         self.avg_4 = nn.AvgPool1d(2)
         self.conv1d_5 = nn.Conv1d(8, 12, kernel_size=3, stride=1)
-        self.dp = nn.Dropout(0.8)
+        self.dp = nn.Dropout(self.dropout)
         self.head = nn.Conv1d(12, out_dims, kernel_size=1, stride=1)
 
     def forward(self, x):
@@ -391,7 +392,7 @@ class ViT_1D(nn.Module):
         super().__init__()
         
         assert (seq_len % patch_size) == 0
-        
+        self.out_dims=out_dims
         self.mean = nn.Parameter(torch.tensor(mean).float(), requires_grad=False)
         self.std = nn.Parameter(torch.tensor(std).float(), requires_grad=False)
 
@@ -413,7 +414,7 @@ class ViT_1D(nn.Module):
 
         self.mlp_head = nn.Sequential(
             nn.LayerNorm(dim_embed),
-            nn.Linear(dim_embed, out_dims)
+            nn.Linear(dim_embed,  self.out_dims)
         )
 
     def forward(self, x):

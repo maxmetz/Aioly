@@ -13,7 +13,9 @@ def process_data(data_raw, mask, spectrum_type, filter_keyword,y_labels):
 
 
 dataset_type="mir"
+
 data_path="C:\\00_aioly\\sources_projects\\OSSL_project\\data\\datasets\\ossl\\ossl_all_L1_v1.2.csv"
+
 data_raw = pd.read_csv(data_path, low_memory=False)
 y_names = data_raw.columns
 
