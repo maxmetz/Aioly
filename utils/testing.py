@@ -64,4 +64,4 @@ def test(model, model_path, test_loader,device = "cuda") :
     plt.xlabel('Observed',fontsize=16)
     plt.ylabel('Predicted',fontsize=16)
     
-    plt.show()
+    plt.show(block=False)
