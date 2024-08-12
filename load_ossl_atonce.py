@@ -78,7 +78,7 @@ if __name__ == "__main__":
     for j in range(len(y_labels)):
         plt.hist(Y_val_sample[:, j], bins=20, alpha=0.5, label=y_labels[j])
     plt.title("Histogram of Sampled Validation Targets (Y_val)")
-    plt.xlabel("y value"))
+    plt.xlabel("y value")
     plt.ylabel("Frequency")
     plt.legend(loc='upper right', bbox_to_anchor=(1.1, 1.05), ncol=1, fontsize='small')
 
