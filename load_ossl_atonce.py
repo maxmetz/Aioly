@@ -3,8 +3,11 @@ from data.load_dataset_atonce import  SpectralDataset
 import time
 import numpy as np
 import matplotlib.pyplot as plt
-
 from sklearn.decomposition import PCA
+
+
+from net.chemtools.PLS import PLS
+from net.chemtools.LWPLSR import LWPLSR
 
 if __name__ == "__main__":
     
@@ -47,6 +50,8 @@ if __name__ == "__main__":
     X_val_sample = X_val[val_sample_indices].numpy()
     Y_val_sample = Y_val[val_sample_indices].numpy()
     
+    default_colors = plt.rcParams['axes.prop_cycle'].by_key()['color']
+    
     plt.figure(figsize=(16, 8))
     plt.subplot(2, 2, 1)
     for i in range(min(num_samples, train_size)):
@@ -54,9 +59,8 @@ if __name__ == "__main__":
         plt.title("X_train")
         plt.xlabel("wavelenght (nm)")
         plt.ylabel("Pseudo absorbance")
-        plt.legend(loc='upper right', bbox_to_anchor=(1.1, 1.05), ncol=1, fontsize='small')
-    
-    
+        leg = plt.legend(loc='upper center', bbox_to_anchor=(0.5, -0.15),
+                 fancybox=True, shadow=True, ncol=5, labelcolor=default_colors) 
     
     plt.subplot(2, 2, 3)
     for i in range(min(num_samples, val_size)):
@@ -64,26 +68,36 @@ if __name__ == "__main__":
     plt.title(" X_val")
     plt.xlabel("Wavelength nm")
     plt.ylabel("Pseudo absorbance")
-    plt.legend(loc='upper right', bbox_to_anchor=(1.1, 1.05), ncol=1, fontsize='small')
+    leg = plt.legend(loc='upper center', bbox_to_anchor=(0.5, -0.15),
+                 fancybox=True, shadow=True, ncol=5, labelcolor=default_colors)
     
-    plt.subplot(2, 2, 2)
+    y_log =np.log(np.where(Y_train.numpy() > 0, Y_train.numpy(), 1e-10))
+    y_val_log =np.log(np.where(Y_val.numpy() > 0, Y_val.numpy(), 1e-10))
+    
+   
+    fig, ax =plt.subplot(2, 2, 2)
     for j in range(len(y_labels)):
-        plt.hist(Y_train_sample[:, j], bins=20, alpha=0.5, label=y_labels[j])
+        plt.hist(y_log[:, j], bins=100, alpha=0.5, label=y_labels[j])
     plt.title("Histogram of Sampled Training Targets (Y_train)")
     plt.xlabel("y value")
     plt.ylabel("Frequency")
-    plt.legend(loc='upper right', bbox_to_anchor=(1.1, 1.05), ncol=1, fontsize='small')
     
-    plt.subplot(2, 2, 4)
+    
+    leg = plt.legend(loc='upper center', bbox_to_anchor=(0.5, -0.15),
+                 fancybox=True, shadow=True, ncol=5, labelcolor=default_colors)
+    
+    fig, ax=plt.subplot(2, 2, 4)
     for j in range(len(y_labels)):
-        plt.hist(Y_val_sample[:, j], bins=20, alpha=0.5, label=y_labels[j])
+        plt.hist((y_val_log[:, j]), bins=100, alpha=0.5, label=y_labels[j])
     plt.title("Histogram of Sampled Validation Targets (Y_val)")
     plt.xlabel("y value")
     plt.ylabel("Frequency")
-    plt.legend(loc='upper right', bbox_to_anchor=(1.1, 1.05), ncol=1, fontsize='small')
+    leg = plt.legend(loc='upper center', bbox_to_anchor=(0.5, -0.15),
+                 fancybox=True, shadow=True, ncol=5, labelcolor=default_colors)
+    
 
     plt.tight_layout()
-    plt.show()
+    plt.show(block=False)
     
     
     
@@ -97,18 +111,22 @@ if __name__ == "__main__":
     pca_scores = pca.fit(X_sample)
     pca_loadings =pca.components_.T*np.sqrt(pca.explained_variance_)
     
-    default_colors = plt.rcParams['axes.prop_cycle'].by_key()['color']
+    
     plt.figure()
     for i in range(np.shape(pca_loadings)[1]):
-        plt.plot(wavelength,pca_loadings[:,i],default_colors[i])
+        plt.plot(wavelength,pca_loadings[:,i],default_colors[i],label=f'PC{i+1}')
         plt.xlabel("Wavelength (nm)")
         plt.ylabel("absorbance")  
-        lab= 'PC'+str(i+1)
-        plt.title(lab) 
+        # lab= 'PC'+str(i+1)
+        # plt.title(lab) 
+        plt.title('Principal components')
         plt.grid()  
         plt.tight_layout()
-        plt.show()
+        leg = plt.legend(loc='upper center', bbox_to_anchor=(0.5, -0.15),
+                 fancybox=True, shadow=True, ncol=5, labelcolor=default_colors) 
+    plt.show(block=False)
     
     
-    
+    pls =PLS(ncomp=40)
+    pls.fit_transform(X_train,Y_train)
     
