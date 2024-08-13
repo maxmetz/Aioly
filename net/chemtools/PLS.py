@@ -7,8 +7,10 @@ class PLS:
 
     def fit(self, X, Y):
         # Convert input arrays to PyTorch tensors
-        X = torch.tensor(X, dtype=torch.float64)
-        Y = torch.tensor(Y, dtype=torch.float64)
+        if not isinstance(X, torch.Tensor):
+            X = torch.tensor(X, dtype=torch.float64).clone().detach()
+        if not isinstance(Y, torch.Tensor):
+            Y = torch.tensor(Y, dtype=torch.float64).clone().detach()
 
         n, zp = X.shape
         q = Y.shape[1]

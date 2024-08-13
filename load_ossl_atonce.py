@@ -5,6 +5,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 from sklearn.decomposition import PCA
 
+import torch
+import torch.nn.functional as F
 
 from net.chemtools.PLS import PLS
 from net.chemtools.LWPLSR import LWPLSR
@@ -50,6 +52,11 @@ if __name__ == "__main__":
     X_val_sample = X_val[val_sample_indices].numpy()
     Y_val_sample = Y_val[val_sample_indices].numpy()
     
+    epsilon = 1e-10
+    Y_train_log = torch.log(torch.where(Y_train > 0, Y_train, torch.tensor(epsilon, dtype=Y_train.dtype)))
+    Y_val_log = torch.log(torch.where(Y_val > 0, Y_val, torch.tensor(epsilon, dtype=Y_val.dtype)))
+    
+    
     default_colors = plt.rcParams['axes.prop_cycle'].by_key()['color']
     
     plt.figure(figsize=(16, 8))
@@ -64,20 +71,18 @@ if __name__ == "__main__":
     
     plt.subplot(2, 2, 3)
     for i in range(min(num_samples, val_size)):
-        plt.plot(wavelength, X_val_sample[i], alpha=0.5, label=f'Sample {i+1}' if i < 10 else "")
+         _=plt.plot(wavelength, X_val_sample[i], alpha=0.5, label=f'Sample {i+1}' if i < 10 else "")
     plt.title(" X_val")
     plt.xlabel("Wavelength nm")
     plt.ylabel("Pseudo absorbance")
     leg = plt.legend(loc='upper center', bbox_to_anchor=(0.5, -0.15),
                  fancybox=True, shadow=True, ncol=5, labelcolor=default_colors)
     
-    y_log =np.log(np.where(Y_train.numpy() > 0, Y_train.numpy(), 1e-10))
-    y_val_log =np.log(np.where(Y_val.numpy() > 0, Y_val.numpy(), 1e-10))
-    
    
-    fig, ax =plt.subplot(2, 2, 2)
+   
+    plt.subplot(2, 2, 2)
     for j in range(len(y_labels)):
-        plt.hist(y_log[:, j], bins=100, alpha=0.5, label=y_labels[j])
+         _=plt.hist(Y_train_log[:, j], bins=100, alpha=0.5, label=y_labels[j])
     plt.title("Histogram of Sampled Training Targets (Y_train)")
     plt.xlabel("y value")
     plt.ylabel("Frequency")
@@ -86,9 +91,9 @@ if __name__ == "__main__":
     leg = plt.legend(loc='upper center', bbox_to_anchor=(0.5, -0.15),
                  fancybox=True, shadow=True, ncol=5, labelcolor=default_colors)
     
-    fig, ax=plt.subplot(2, 2, 4)
+    plt.subplot(2, 2, 4)
     for j in range(len(y_labels)):
-        plt.hist((y_val_log[:, j]), bins=100, alpha=0.5, label=y_labels[j])
+         _=plt.hist((Y_val_log[:, j]), bins=100, alpha=0.5, label=y_labels[j]);
     plt.title("Histogram of Sampled Validation Targets (Y_val)")
     plt.xlabel("y value")
     plt.ylabel("Frequency")
@@ -127,6 +132,34 @@ if __name__ == "__main__":
     plt.show(block=False)
     
     
-    pls =PLS(ncomp=40)
-    pls.fit_transform(X_train,Y_train)
+    
+    
+    
+    
+    ncomp=40
+    pls =PLS(ncomp=ncomp)
+    pls.fit(X_train,Y_train_log)
+    
+    perf = []
+    for lv in range(ncomp):
+        y_pred=pls.predict(X_val,lv)
+        rmse = torch.sqrt(F.mse_loss(torch.exp(y_pred), torch.exp(Y_val_log),reduction='none')).mean(dim=0)
+        perf.append(rmse)
+        
+    
+    plt.figure()
+    for i,target in enumerate(y_labels):
+         plt.plot(range(1, ncomp + 1), [perf[lv][i].item() for lv in range(ncomp)], label=target)
+         
+    
+    plt.xlabel('Latent Variables')
+    plt.ylabel('RMSEP')
+    plt.title('training RMSEP')
+    plt.legend()
+    plt.grid(True)
+    plt.show(block=False)
+ 
+    
+    
+    
     
