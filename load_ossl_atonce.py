@@ -13,10 +13,9 @@ from net.chemtools.LWPLSR import LWPLSR
 
 if __name__ == "__main__":
     
-
     user = os.environ.get('USERNAME')
     if user == 'fabdelghafo':
-        data_path = "C:\\00_aioly\\sources_projects\\OSSL_project\\data\\datasets\\ossl\\ossl_all_L1_v1.2.csv"
+        data_path = "C:\\00_aioly\\GitHub\datasets\\ossl\\ossl_all_L1_v1.2.csv"
     else:
         data_path = "/home/metz/deepchemometrics/Aioly/data/dataset/oss/ossl_all_L1_v1.2.csv"
 
@@ -79,7 +78,6 @@ if __name__ == "__main__":
                  fancybox=True, shadow=True, ncol=5, labelcolor=default_colors)
     
    
-   
     plt.subplot(2, 2, 2)
     for j in range(len(y_labels)):
          _=plt.hist(Y_train_log[:, j], bins=100, alpha=0.5, label=y_labels[j])
@@ -100,11 +98,8 @@ if __name__ == "__main__":
     leg = plt.legend(loc='upper center', bbox_to_anchor=(0.5, -0.15),
                  fancybox=True, shadow=True, ncol=5, labelcolor=default_colors)
     
-
     plt.tight_layout()
     plt.show(block=False)
-    
-    
     
     sample_size = int(0.25 * train_size)
     sample_indices = np.random.choice(train_size, sample_size, replace=False)
@@ -115,7 +110,6 @@ if __name__ == "__main__":
     pca = PCA(n_components=nb_pca_comp)
     pca_scores = pca.fit(X_sample)
     pca_loadings =pca.components_.T*np.sqrt(pca.explained_variance_)
-    
     
     plt.figure()
     for i in range(np.shape(pca_loadings)[1]):
@@ -135,29 +129,6 @@ if __name__ == "__main__":
     
     
     
-    
-    ncomp=40
-    pls =PLS(ncomp=ncomp)
-    pls.fit(X_train,Y_train_log)
-    
-    perf = []
-    for lv in range(ncomp):
-        y_pred=pls.predict(X_val,lv)
-        rmse = torch.sqrt(F.mse_loss(torch.exp(y_pred), torch.exp(Y_val_log),reduction='none')).mean(dim=0)
-        perf.append(rmse)
-        
-    
-    plt.figure()
-    for i,target in enumerate(y_labels):
-         plt.plot(range(1, ncomp + 1), [perf[lv][i].item() for lv in range(ncomp)], label=target)
-         
-    
-    plt.xlabel('Latent Variables')
-    plt.ylabel('RMSEP')
-    plt.title('training RMSEP')
-    plt.legend()
-    plt.grid(True)
-    plt.show(block=False)
  
     
     

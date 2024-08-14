@@ -18,7 +18,7 @@ class PLS:
         if self.weights is None:
             self.weights = torch.ones(n, dtype=torch.float64) / n
         else:
-            self.weights = torch.tensor(self.weights, dtype=torch.float64) / torch.sum(self.weights)
+            self.weights = torch.tensor(self.weights, dtype=torch.float64).clone().detach() / torch.sum(self.weights)
 
         self.xmeans = torch.sum(self.weights[:, None] * X, dim=0)
         X = X - self.xmeans
@@ -91,7 +91,7 @@ class PLS:
         }
 
     def predict(self, X, nlv=None):
-        X = torch.tensor(X, dtype=torch.float64)
+        X = torch.tensor(X, dtype=torch.float64).clone().detach()
         X = X - self.xmeans
 
         if nlv is None:
