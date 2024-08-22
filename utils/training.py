@@ -166,7 +166,7 @@ def train(model, optimizer, criterion, train_loader, val_loader, num_epochs, sav
     fig.tight_layout()  # To prevent overlapping
 
     # Show the plot
-    plt.show()    
+    plt.show(block=False)    
         
         
         
