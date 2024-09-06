@@ -1,7 +1,7 @@
 Deep Learning for spectroscopic Data:
 
 Application with (OSSL) Open Soil Spectral Library soil NIR/MIR Database: 
-https://soilspectroscopy.org/introducing-the-open-soil-spectral-library/
+https://storage.googleapis.com/soilspec4gg-public/ossl_all_L1_v1.2.csv.gz
 
 Load_dataset:
 A dataset class for OSSL data adapted for torch dataloader.
