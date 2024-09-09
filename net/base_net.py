@@ -236,6 +236,7 @@ class ResNet1D(nn.Module):
         self.layer3 = self._make_layer(block, 4*inplanes, num_blocks[2], stride=2)
         self.layer4 = self._make_layer(block, 8*inplanes, num_blocks[3], stride=2)
         self.avgpool = nn.AdaptiveAvgPool1d(1)
+        self.out_dims = out_dims
 
 
         if zero_init_residual:
@@ -391,7 +392,13 @@ class ViT_1D(nn.Module):
     def __init__(self, *, mean, std, seq_len, patch_size, dim_embed, trans_layers, heads, mlp_dim, out_dims, channels = 1, dim_head = 64, dropout = 0., emb_dropout = 0.):
         super().__init__()
         
-        assert (seq_len % patch_size) == 0
+        if (seq_len % patch_size) != 0 :
+            self.crop = seq_len % patch_size
+            self.seq_len = (seq_len - self.crop)
+            self.crop = -self.crop
+        else :
+            self.crop = None
+
         self.out_dims=out_dims
         self.mean = nn.Parameter(torch.tensor(mean).float(), requires_grad=False)
         self.std = nn.Parameter(torch.tensor(std).float(), requires_grad=False)
@@ -420,6 +427,8 @@ class ViT_1D(nn.Module):
     def forward(self, x):
         
         x = (x - self.mean) / self.std
+        x = x[...,:self.crop]
+
         x = self.to_patch_embedding(x)
         b, n, _ = x.shape
 
@@ -433,5 +442,5 @@ class ViT_1D(nn.Module):
         x = self.transformer(x)
 
         cls_tokens, _ = unpack(x, ps, 'b * d')
-
-        return self.mlp_head(cls_tokens)
+        out = self.mlp_head(cls_tokens)
+        return out
