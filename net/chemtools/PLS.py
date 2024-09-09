@@ -69,7 +69,10 @@ class PLS:
             self.TT[a] = tt
 
     def transform(self, X):
-        X = torch.tensor(X, dtype=torch.float64)
+        if not isinstance(X, torch.Tensor):
+            X = torch.tensor(X, dtype=torch.float64)
+        else:
+            X = X.clone().detach().to(dtype=torch.float64)
         X = X - self.xmeans
         T_new = X @ self.R
         return T_new
@@ -93,7 +96,11 @@ class PLS:
         }
 
     def predict(self, X, nlv=None):
-        X = torch.tensor(X, dtype=torch.float64).clone().detach()
+        if not isinstance(X, torch.Tensor):
+            X = torch.tensor(X, dtype=torch.float64)
+        else:
+            X = X.clone().detach().to(dtype=torch.float64)
+            
         X = X - self.xmeans
 
         if nlv is None:

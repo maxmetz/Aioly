@@ -27,7 +27,7 @@ if __name__ == "__main__":
 
     y_labels = ["oc_usda.c729_w.pct", "na.ext_usda.a726_cmolc.kg", "clay.tot_usda.a334_w.pct", 
                 "k.ext_usda.a725_cmolc.kg", "ph.h2o_usda.a268_index"]  
-    dataset_type = "mir"
+    dataset_type = "nir"
     
     
     dataset = SpectralDataset(data_path, y_labels, dataset_type)
@@ -38,7 +38,7 @@ if __name__ == "__main__":
     Y_train=dataset.Y_train
     Y_test=dataset.Y_val
     
-    base_path = 'C:\\00_aioly\\GitHub\\datasets\\ossl\\figures\\pls\\data_mir'
+    base_path = 'C:\\00_aioly\\GitHub\\datasets\\ossl\\figures\\pls\\data_visnir'
     if not os.path.exists(base_path):
         os.makedirs(base_path)
         
