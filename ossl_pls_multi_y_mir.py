@@ -46,4 +46,45 @@ if __name__ == "__main__":
     pls =PLS(ncomp=ncomp)
     #########################################################################################################
 
-    
+    Y_train_log = torch.log1p(Y_train)
+    Y_val_log = torch.log1p(Y_val)
+
+    pls.fit(X_train, Y_train_log)
+
+    perf = {label: [] for label in y_labels}  # RMSE for each label
+    for lv in range(ncomp):
+        Y_pred = pls.predict(X_val, lv)
+        for i, target_label in enumerate(y_labels):
+            y_pred_label = Y_pred[:, i].unsqueeze(1)
+            Y_val_label = Y_val_log[:, i].unsqueeze(1)
+            rmse = torch.sqrt(F.mse_loss(y_pred_label, Y_val_label, reduction='none')).mean(dim=0)
+            perf[target_label].append(rmse)
+
+    # Predict with all latent variables
+    Y_pred_final = pls.predict(X_val, ncomp - 1)
+
+    for target_index, target_label in enumerate(y_labels):
+        Y_val_subset = Y_val_log[:, target_index].unsqueeze(1)
+        y_pred_label = Y_pred_final[:, target_index].unsqueeze(1)
+        
+        ccc_value = ccc(Y_val_subset, y_pred_label)
+        r2_value = r2_score(Y_val_subset, y_pred_label)
+        
+        fig = plt.figure()
+        plt.plot(range(1, ncomp + 1), [p.item() for p in perf[target_label]], label=target_label, color=default_colors[target_index])
+        
+        plt.text(0.95, 0.95, f'CCC: {ccc_value:.2f}\nR²: {r2_value:.2f}', 
+                 transform=plt.gca().transAxes, fontsize=12,
+                 verticalalignment='top', horizontalalignment='right',
+                 bbox=dict(facecolor='white', edgecolor='black', boxstyle='round,pad=0.5'),
+                 color='red', fontweight='bold', fontfamily='serif')
+        
+        plt.xlabel('Latent Variables')
+        plt.ylabel('RMSEP')
+        plt.title(f'Training RMSE for {target_label} (log x +1)')
+        plt.tight_layout()
+        plt.legend(loc='upper center', bbox_to_anchor=(0.5, -0.15),
+                   fancybox=True, shadow=True, ncol=5, labelcolor=default_colors[target_index], fontsize=12)
+        plt.subplots_adjust(bottom=0.3)
+        plt.grid(True)
+        fig.show()
