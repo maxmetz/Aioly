@@ -6,8 +6,9 @@ import torch
 import torch.nn.functional as F
 
 from net.chemtools.PLS import PLS
-from utils.testing import ccc,r2_score
+from net.chemtools.metrics import ccc, r2_score
 import pickle
+import pyppt as ppt
 
 if __name__ == "__main__":
     
@@ -36,7 +37,7 @@ if __name__ == "__main__":
     #########################################################################################################
     
     wavelength = dataset.get_spectral_dimensions()
-    num_samples = 200 
+
     X_train=dataset.X_train
     X_val=dataset.X_val
     Y_train=dataset.Y_train
@@ -59,11 +60,14 @@ if __name__ == "__main__":
             Y_val_label = Y_val_log[:, i].unsqueeze(1)
             rmse = torch.sqrt(F.mse_loss(y_pred_label, Y_val_label, reduction='none')).mean(dim=0)
             perf[target_label].append(rmse)
+              
 
     # Predict with all latent variables
-    Y_pred_final = pls.predict(X_val, ncomp - 1)
-
-    for target_index, target_label in enumerate(y_labels):
+    Y_pred_final = pls.predict(X_val, ncomp-1)
+    
+    for target_label in y_labels:
+        target_index = y_labels.index(target_label)
+        
         Y_val_subset = Y_val_log[:, target_index].unsqueeze(1)
         y_pred_label = Y_pred_final[:, target_index].unsqueeze(1)
         
@@ -88,3 +92,50 @@ if __name__ == "__main__":
         plt.subplots_adjust(bottom=0.3)
         plt.grid(True)
         fig.show()
+        ppt.add_figure('Center')
+        
+         
+        pdf_path = os.path.join(base_path, f'fig_RMSE_{target_label}.pdf')
+        plt.savefig(pdf_path, format='pdf')
+        
+        svg_path = os.path.join(base_path, f'fig_RMSE_{target_label}.svg')
+        plt.savefig(svg_path, format='svg')
+
+        pickle_path = os.path.join(base_path, f'fig_RMSE_{target_label}.pkl')
+        with open(pickle_path, 'wb') as f:
+            pickle.dump(fig, f)
+            
+        fig, ax = plt.subplots()
+        hexbin = ax.hexbin(Y_val_subset.squeeze().numpy(), y_pred_label.squeeze().numpy(), gridsize=50, cmap='inferno', mincnt=1)
+        cb = fig.colorbar(hexbin, ax=ax, orientation='vertical')
+        cb.set_label('Density')
+        lims = [np.min([Y_val_subset.numpy(), y_pred_label.numpy()]), np.max([Y_val_subset.numpy(), y_pred_label.numpy()])]
+        ax.plot(lims, lims, 'k-', label= target_label)  
+        
+        plt.text(0.05, 0.95, f'CCC: {ccc_value:.2f}\nR²: {r2_value:.2f}', 
+                 transform=plt.gca().transAxes, fontsize=12,
+                 verticalalignment='top', horizontalalignment='left',
+                 bbox=dict(facecolor='white', edgecolor='black', boxstyle='round,pad=0.5'),
+                 color='red', fontweight='bold', fontfamily='serif')
+        
+        ax.set_xlabel('Real Values')
+        ax.set_ylabel('Predicted Values')
+        ax.set_title(f'Predicted vs Real Values for {target_label} (log x + 1)')
+        
+        
+        plt.legend(loc='upper center', bbox_to_anchor=(0.5, -0.15),
+                   fancybox=True, shadow=True, ncol=5, fontsize=12,labelcolor =default_colors[target_index])
+        plt.tight_layout()
+        plt.grid()
+        fig.show()
+        
+        hexbin_pdf_path = os.path.join(base_path, f'fig_hexbin_{target_label}.pdf')
+        plt.savefig(hexbin_pdf_path, format='pdf')
+        
+        hexbin_svg_path = os.path.join(base_path, f'fig_hexbin_{target_label}.svg')
+        plt.savefig(hexbin_svg_path, format='svg')
+
+        # Save the figure object using pickle
+        hexbin_pickle_path = os.path.join(base_path, f'fig_hexbin_{target_label}.pkl')
+        with open(hexbin_pickle_path, 'wb') as f:
+            pickle.dump(fig, f)
