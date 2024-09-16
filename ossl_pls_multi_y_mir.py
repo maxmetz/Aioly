@@ -10,6 +10,9 @@ from net.chemtools.metrics import ccc, r2_score
 import pickle
 import pyppt as ppt
 
+add_fig=True
+
+
 if __name__ == "__main__":
     
     #########################################################################################################
@@ -20,7 +23,7 @@ if __name__ == "__main__":
         data_path = "/home/metz/deepchemometrics/Aioly/data/dataset/oss/ossl_all_L1_v1.2.csv"
 
     y_labels = ["oc_usda.c729_w.pct","na.ext_usda.a726_cmolc.kg","clay.tot_usda.a334_w.pct","k.ext_usda.a725_cmolc.kg","ph.h2o_usda.a268_index"]  
-    dataset_type = "mir"
+    dataset_type = "nir"
     
     
     base_path = os.path.join(os.path.dirname(data_path), 'figures', 'pls_multi', f'data_{dataset_type}')
@@ -65,6 +68,7 @@ if __name__ == "__main__":
     # Predict with all latent variables
     Y_pred_final = pls.predict(X_val, ncomp-1)
     
+    
     for target_label in y_labels:
         target_index = y_labels.index(target_label)
         
@@ -91,9 +95,11 @@ if __name__ == "__main__":
                    fancybox=True, shadow=True, ncol=5, labelcolor=default_colors[target_index], fontsize=12)
         plt.subplots_adjust(bottom=0.3)
         plt.grid(True)
-        fig.show()
-        ppt.add_figure('Center')
+        # fig.show()
+        if add_fig==True:
+            ppt.add_figure('Center')
         
+       
          
         pdf_path = os.path.join(base_path, f'fig_RMSE_{target_label}.pdf')
         plt.savefig(pdf_path, format='pdf')
@@ -127,7 +133,10 @@ if __name__ == "__main__":
                    fancybox=True, shadow=True, ncol=5, fontsize=12,labelcolor =default_colors[target_index])
         plt.tight_layout()
         plt.grid()
-        fig.show()
+        
+        # fig.show()
+        if add_fig==True:
+            ppt.add_figure('Center')
         
         hexbin_pdf_path = os.path.join(base_path, f'fig_hexbin_{target_label}.pdf')
         plt.savefig(hexbin_pdf_path, format='pdf')
@@ -139,3 +148,5 @@ if __name__ == "__main__":
         hexbin_pickle_path = os.path.join(base_path, f'fig_hexbin_{target_label}.pkl')
         with open(hexbin_pickle_path, 'wb') as f:
             pickle.dump(fig, f)
+            
+ 
