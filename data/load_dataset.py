@@ -10,8 +10,8 @@ class SoilSpectralDataSet(Dataset):
     def __init__(self, dataset_type="visnir", data_path=None, preprocessing=None,y_labels="oc.usda.c729", reduce_lbd = False):
         if data_path==None:
             # Set default data path in project path if none provided
-            rel_dir = os.path.dirname(os.path.abspath(__file__))
-            data_path = os.path.join(rel_dir, 'data/datasets/oss/ossl_all_L1_v1.2.csv')
+            rel_dir = os.getcwd()
+            data_path = os.path.join(rel_dir, 'data/dataset/oss/ossl_all_L1_v1.2.csv')
             
         self.reduce_lbd = reduce_lbd
         self.data_path = data_path
@@ -73,7 +73,8 @@ class SoilSpectralDataSet(Dataset):
     
     def get_labels(self):
         return(self.y_names)
-   
+
+
 
 
 # if __name__ == '__main__':

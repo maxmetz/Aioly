@@ -58,7 +58,6 @@ class CuiNet(nn.Module):
         x = F.dropout(x, p=self.dropout, training=self.training)
         # Output layer with linear activation
         x = self.out(x)
-        
         return x
 
 
@@ -444,3 +443,5 @@ class ViT_1D(nn.Module):
         cls_tokens, _ = unpack(x, ps, 'b * d')
         out = self.mlp_head(cls_tokens)
         return out
+
+
