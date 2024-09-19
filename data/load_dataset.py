@@ -73,6 +73,17 @@ class SoilSpectralDataSet(Dataset):
     
     def get_labels(self):
         return(self.y_names)
+    
+    def extract_labels(self, selected_labels):
+        if not isinstance(selected_labels, list):
+            selected_labels = [selected_labels]
+
+        # Filter Y based on the selected labels
+        selected_columns = [self.y_labels_dict[label] for label in selected_labels if label in self.y_labels_dict]
+        Y_filtered = np.array(self.data_raw.filter(regex="|".join(selected_columns)))
+
+        # Update the Y attribute to the filtered labels
+        self.Y = Y_filtered
    
 
 
