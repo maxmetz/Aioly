@@ -36,13 +36,16 @@ def ccc(y_true,y_pred):
     return(ccc)
 
 
-def test(model, model_path, test_loader,device = "cuda") : 
+def test(model, model_path, test_loader) : 
     
     Y = []
     y_pred = []
+    
     model.load_state_dict(torch.load(model_path))
     
+    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     model.to(device)
+    model.eval()
     with torch.no_grad():
         for inputs, targets in test_loader:
             Y += targets.to("cpu")

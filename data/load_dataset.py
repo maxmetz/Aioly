@@ -32,6 +32,8 @@ class SoilSpectralDataSet(Dataset):
             y_labels = [y_labels]
         self.y_labels = y_labels
         
+        self.label_map = {label: label for label in self.y_labels}
+        
         # Extract target variables
         Y = np.array(data_raw.filter(regex="|".join(y_labels)))
         mask = ~np.isnan(Y).any(axis=1)
@@ -64,26 +66,21 @@ class SoilSpectralDataSet(Dataset):
     def __len__(self):
         return len(self.X)
 
-    def __getitem__(self, index):
+    def __getitem__(self, index,label_name=None):
         spectral_data = self.X[index, :]
         if self.reduce_lbd : 
             spectral_data = spectral_data[:-1]
-        label = self.Y[index]
+            
+        if label_name:
+            label_idx = self.y_labels.index(label_name)
+            label = self.Y[index, label_idx]
+        else:
+             label = self.Y[index]
         return spectral_data, np.log(label+1)
     
-    def get_labels(self):
-        return(self.y_names)
+  
     
-    def extract_labels(self, selected_labels):
-        if not isinstance(selected_labels, list):
-            selected_labels = [selected_labels]
-
-        # Filter Y based on the selected labels
-        selected_columns = [self.y_labels_dict[label] for label in selected_labels if label in self.y_labels_dict]
-        Y_filtered = np.array(self.data_raw.filter(regex="|".join(selected_columns)))
-
-        # Update the Y attribute to the filtered labels
-        self.Y = Y_filtered
+  
    
 
 
